@@ -10,6 +10,8 @@ const RenewToken = async(req, res = response) => {
     const uid = req.uid 
     const name = req.name
 
+    const user = await User.findById( uid )
+
     //generar nuevo JWT
     const token  = await generateJWT( uid, name )
 
@@ -18,6 +20,7 @@ const RenewToken = async(req, res = response) => {
         msg: 'Renew Token',
         uid,
         name,
+        email: user?.email,
         token
     })
     
@@ -27,14 +30,14 @@ const RenewToken = async(req, res = response) => {
 //createUser
 const createUser = async(req, res = response) => {
 
-    const {name, email, password} = req.body
+    const { email, password } = req.body
 
     //validación con la BD
 
     try {
         
         let user = await User.findOne({ email })
-        console.log(user);
+        console.log('[auth.createUser] email:', email, '| ya existe:', !!user)
 
         if( user ){
             return res.status(400).json({
@@ -53,15 +56,21 @@ const createUser = async(req, res = response) => {
 
         // Generar JWT 
         const token  = await generateJWT( user.id, user.name )
+
+        console.log('[auth.createUser] usuario creado:', {
+            uid: user.id,
+            name: user.name,
+            email: user.email
+        })
     
         res.status(201).json({
-
-        ok: true,
-        msg: 'New user',
-        user: `${name} , ${email} , ${password}`,
-        token
-
-    })
+            ok: true,
+            msg: 'New user',
+            uid: user.id,
+            name: user.name,
+            email: user.email,
+            token
+        })
         
     } catch (error) {
         console.log(error);
@@ -79,7 +88,7 @@ const LoginUser = async(req, res = response) => {
     try {
 
         const user = await User.findOne({ email })
-        console.log(user);
+        console.log('[auth.LoginUser] intento de login:', email, '| usuario encontrado:', !!user)
 
         if( !user ){
             return res.status(400).json({
@@ -101,11 +110,19 @@ const LoginUser = async(req, res = response) => {
 
         // Generar JWT 
         const token  = await generateJWT( user.id, user.name )
+
+        console.log('[auth.LoginUser] login exitoso:', {
+            uid: user.id,
+            name: user.name,
+            email: user.email
+        })
         
-        res.status(202).json({
+        res.status(200).json({
             ok: true,
             msg: 'Welcome again',
-            user: `${email} , ${password}`,
+            uid: user.id,
+            name: user.name,
+            email: user.email,
             token
         })
 
